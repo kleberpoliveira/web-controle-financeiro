@@ -1,0 +1,232 @@
+/*
+#   -> usado para IDs ex: id="app"
+.   -> usado para classes ex: class="home-link"
+*/
+
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: Arial, sans-serif;
+}
+
+#app {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* HEADER */
+header {
+    background-color: #b2dfdb;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+}
+
+/* LINKS DO MENU */
+.home-link {
+    margin: 0 10px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.home-link a {
+    text-decoration: none;
+    color: inherit;
+}
+
+/* CONTEÚDO */
+main {
+    flex: 1;
+    padding: 20px;
+    background-color: #fff;
+}
+
+/* TABELA */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+th, td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: center;
+}
+
+th {
+    background-color: #e0f2f1;
+}
+
+/* FOOTER */
+footer {
+    background-color: #b2dfdb;
+    padding: 15px;
+    text-align: center;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+select {
+      min-width: 280px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+      background-color: #fff;
+    }
+
+select:focus {
+    outline: none;
+    border-color: #1976d2;
+    box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.15);
+}
+
+
+
+/*################################# menu */
+
+/* Estilos gerais do Header */
+.app-header {
+    background-color: #b2dfdb;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.brand-link {
+    font-weight: bold;
+    font-size: 18px;
+    color: #333;
+    text-decoration: none;
+}
+
+/* Navegação Padrão (Desktop) */
+.nav-menu {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.nav-menu a, .dropdown-toggle {
+    text-decoration: none;
+    color: #333;
+    font-weight: 500;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 15px;
+    padding: 5px 0;
+}
+
+.nav-menu a:hover, .dropdown-toggle:hover {
+    color: #00796b;
+}
+
+/* Estilo dos Dropdowns */
+.dropdown {
+    position: relative;
+}
+
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: #fff;
+    min-width: 220px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    border-radius: 4px;
+    padding: 8px 0;
+    z-index: 1000;
+    flex-direction: column;
+}
+
+.dropdown.open .dropdown-menu {
+    display: flex;
+}
+
+.dropdown-menu a {
+    padding: 8px 16px;
+    color: #333;
+    white-space: nowrap;
+}
+
+.dropdown-menu a:hover {
+    background-color: #f1f1f1;
+    color: #00796b;
+}
+
+/* Botão Hambúrguer (Escondido no Desktop) */
+.hamburger-btn {
+    display: none;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 30px;
+    height: 22px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+}
+
+.hamburger-btn span {
+    width: 100%;
+    height: 3px;
+    background-color: #333;
+    border-radius: 2px;
+}
+
+/* Responsividade para Celulares (Telas menores que 768px) */
+@media (max-width: 768px) {
+    .hamburger-btn {
+        display: flex;
+    }
+
+    .nav-menu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        background-color: #b2dfdb;
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 15px 20px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        box-sizing: border-box;
+        gap: 12px;
+    }
+
+    .nav-menu.active {
+        display: flex;
+    }
+
+    .dropdown {
+        width: 100%;
+    }
+
+    .dropdown-toggle {
+        width: 100%;
+        text-align: left;
+        padding: 5px 0;
+    }
+
+    .dropdown-menu {
+        position: static;
+        box-shadow: none;
+        background-color: rgba(255, 255, 255, 0.5);
+        padding-left: 15px;
+        margin-top: 5px;
+        border-radius: 4px;
+    }
+}

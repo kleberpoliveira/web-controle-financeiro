@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"> 
+  <link rel="stylesheet" href="css/style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/estrutura.js"></script>
+  <script>document.write(`<title>${TITULO_SITE}Loja</title>`);</script> 
+</head>
+<body>
+
+<div id="app">
+ 
+  <!-- HEADER -->
+<app-header></app-header>
+  <!-- CONTEÚDO -->
+  <main>
+    <!-- HOME (BACKEND) -->
+    <div>   
+        <h2>Lojas</h2> 
+
+      <button @click="buscarDados">
+        {{ dados ? 'Recarregar dados' : 'Buscar dados do backend' }}
+      </button>
+
+      <div v-if="dados && dados.length">
+      <table>
+        <thead>
+          <tr>
+            <th>Id Loja</th>
+            <th>Razão Social</th>
+            <th>Nome Fantasia</th>
+            <th>CNPJ</th>
+            <th>Id Grupo</th>
+            <th>Grupo</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="l in dados" :key="l.id_Loja">
+            <td>{{ l.id_Loja }}</td>
+            <td>{{ l.razao_Social }}</td>
+            <td>{{ l.nome_Fantasia }}</td>
+            <td>{{ l.cnpj }}</td>
+            <td>{{ l.id_Grupo }}</td>
+            <td>{{ l.grupo }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+
+
+    </div>
+  </main>
+  <!-- FOOTER -->
+  <app-footer></app-footer> 
+
+</div>
+
+<script>
+  const { createApp } = Vue;
+ 
+const app = createApp({
+  data() {
+    return { dados: null };
+  },
+  methods: {
+	async buscarDados() {
+	  this.carregando = true;
+	  try {
+		this.dados = await Utils.apiFetch('/produto/ListaProdutos');
+	  } finally {
+		this.carregando = false;
+	  }
+	}
+  }
+});
+app.component('app-header', AppHeader);
+app.component('app-footer', AppFooter);
+app.mount('#app');
+</script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"> 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="/js/config.js"></script>
+  <script src="/js/utils.js"></script>
+  <script src="/js/estrutura.js"></script>
+  <script>document.write(`<title>${TITULO_SITE}Cadastro de Conta Bancária</title>`);</script>
+</head>
+<body>
+
+<div id="app">
+  <app-header></app-header>
+  <main>
+    <div>   
+      <h2>Cadastro de Conta Bancária</h2> 
+      <button @click="buscarDados">
+        {{ dados ? 'Recarregar dados' : 'Buscar dados do backend' }}
+      </button>
+      <div v-if="dados">
+        <h3>{{ dados.id }} - {{ dados.nome }}</h3>
+      </div> 
+    </div>
+  </main>
+  <app-footer></app-footer> 
+</div>
+
+<script>
+  const { createApp } = Vue;
+ 
+
+const app = createApp({
+  data() {
+    return {
+      dados: null
+    };
+  }, 
+  methods: {
+    async buscarDados() {
+	  this.carregando = true;
+	  try {
+		this.dados = await Utils.apiFetch('/test');
+	  } finally {
+		this.carregando = false;
+	  }
+	}
+  }
+});
+app.component('app-header', AppHeader);
+app.component('app-footer', AppFooter);
+app.mount('#app');
+</script>
+</body>
+</html>
