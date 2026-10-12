@@ -20,9 +20,13 @@
       <button @click="buscarDados">
         {{ dados ? 'Recarregar dados' : 'Buscar dados do backend' }}
       </button>
-      <div v-if="dados">
-        <h3>{{ dados.id }} - {{ dados.nome }}</h3>
-      </div> 
+     <div v-if="dados && dados.length > 0">
+    <ul>
+        <li v-for="item in dados" :key="item.id">
+            <h3>{{ item.id }} - {{ item.nome }}</h3>
+        </li>
+    </ul>
+</div>
     </div>
   </main>
   <app-footer></app-footer> 
@@ -43,6 +47,7 @@ const app = createApp({
 	  this.carregando = true;
 	  try {
 		this.dados = await Utils.apiFetch('/test');
+    console.log(this.dados);
 	  } finally {
 		this.carregando = false;
 	  }
