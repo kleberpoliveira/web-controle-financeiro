@@ -122,6 +122,10 @@
 <row name="data_vencimento" null="1" autoincrement="0">
 <datatype>DATE</datatype>
 <default>NULL</default></row>
+<row name="id_conta_bancaria_movto" null="1" autoincrement="0">
+<datatype>INTEGER</datatype>
+<default>NULL</default><relation table="conta_bancaria_movto" row="id_conta_bancaria_movto" />
+</row>
 <key type="PRIMARY" name="">
 <part>id_fatura</part>
 </key>
