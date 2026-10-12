@@ -5,7 +5,7 @@ CREATE OR ALTER FUNCTION dbo.frg_forma_pagto
     @id_fatura INT 
 )
 RETURNS VARCHAR(100)
-AS
+AS 
 BEGIN
     DECLARE @resultado VARCHAR(100);
 
