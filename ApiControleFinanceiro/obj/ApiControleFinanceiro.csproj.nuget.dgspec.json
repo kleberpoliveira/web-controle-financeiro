@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Dados\\@github\\web-controle-financeiro\\ApiControleFinanceiro\\ApiControleFinanceiro.csproj": {}
+    "C:\\Dados\\@github\\kleberpoliveira\\web-controle-financeiro\\ApiControleFinanceiro\\ApiControleFinanceiro.csproj": {}
   },
   "projects": {
-    "C:\\Dados\\@github\\web-controle-financeiro\\ApiControleFinanceiro\\ApiControleFinanceiro.csproj": {
+    "C:\\Dados\\@github\\kleberpoliveira\\web-controle-financeiro\\ApiControleFinanceiro\\ApiControleFinanceiro.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Dados\\@github\\web-controle-financeiro\\ApiControleFinanceiro\\ApiControleFinanceiro.csproj",
+        "projectUniqueName": "C:\\Dados\\@github\\kleberpoliveira\\web-controle-financeiro\\ApiControleFinanceiro\\ApiControleFinanceiro.csproj",
         "projectName": "ApiControleFinanceiro",
-        "projectPath": "C:\\Dados\\@github\\web-controle-financeiro\\ApiControleFinanceiro\\ApiControleFinanceiro.csproj",
+        "projectPath": "C:\\Dados\\@github\\kleberpoliveira\\web-controle-financeiro\\ApiControleFinanceiro\\ApiControleFinanceiro.csproj",
         "packagesPath": "C:\\Users\\Kleber\\.nuget\\packages\\",
-        "outputPath": "C:\\Dados\\@github\\web-controle-financeiro\\ApiControleFinanceiro\\obj\\",
+        "outputPath": "C:\\Dados\\@github\\kleberpoliveira\\web-controle-financeiro\\ApiControleFinanceiro\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
