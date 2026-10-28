@@ -1,23 +1,13 @@
 [
   {
-    "ContainingType": "ApiControleFinanceiro.Controllers.TesteController",
+    "ContainingType": "ApiControleFinanceiro.Controllers.HomeController",
     "Method": "Get",
-    "RelativePath": "Teste",
-    "HttpMethod": "",
+    "RelativePath": "api/Home",
+    "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
     "Parameters": [],
-    "ReturnTypes": [
-      {
-        "Type": "System.String",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
+    "ReturnTypes": []
   },
   {
     "ContainingType": "ApiControleFinanceiro.Controllers.WeatherForecastController",
