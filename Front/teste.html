@@ -6,6 +6,7 @@
   <link rel="stylesheet" href="css/style.css">
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
   <script src="js/config.js"></script>
+  <script src="js/rotas.js"></script>
   <script src="js/utils.js"></script>
   <script src="js/estrutura.js"></script>
   <script>document.write(`<title>${TITULO_SITE}Home</title>`);</script>
@@ -16,44 +17,77 @@
   <app-header></app-header>
   <main>
     <div>   
-      <h2>Home</h2> 
+      <h2>Home (Sem Parâmetro)</h2> 
       <button @click="buscarDados">
         {{ dados ? 'Recarregar dados' : 'Buscar dados do backend' }}
       </button>
       <div v-if="dados && dados.mensagem">
           <h3>{{ dados.mensagem }}</h3>
       </div>
+
+      <hr style="margin: 20px 0;">
+
+      <h2>Home (Com Parâmetro)</h2>
+      <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+        <input type="number" v-model.number="valorParametro" placeholder="Digite um número">
+        <button @click="buscarDadosComParametro">
+          Buscar com parâmetro
+        </button>
+      </div>
+      <div v-if="dadosParam && dadosParam.mensagem">
+          <h3>{{ dadosParam.mensagem }}</h3>
+      </div>
     </div>
-    <a href="https://localhost:7219/api/home" target="_blank">teste</a>
+    
+    <br>
+    <a href="https://localhost:7219/api/home" target="_blank">teste endpoint sem parâmetro</a>
   </main>
   <app-footer></app-footer> 
 </div>
 
 <script>
   const { createApp } = Vue;
- 
 
-const app = createApp({
-  data() {
-    return {
-      dados: null
-    };
-  }, 
-  methods: {
-    async buscarDados() {
-	  this.carregando = true;
-	  try {
-		this.dados = await Utils.apiFetch('/home');
-    console.log(this.dados);
-	  } finally {
-		this.carregando = false;
-	  }
-	}
-  }
-});
-app.component('app-header', AppHeader);
-app.component('app-footer', AppFooter);
-app.mount('#app');
+  const app = createApp({
+    data() {
+      return {
+        dados: null,
+        dadosParam: null,
+        valorParametro: 10,
+        carregando: false
+      };
+    }, 
+    methods: {
+      async buscarDados() {
+        this.carregando = true;
+        try {
+          this.dados = await Utils.apiFetch(Rotas.home());
+          console.log(this.dados);
+        } catch (erro) {
+          console.error(erro);
+        } finally {
+          this.carregando = false;
+        }
+      },
+
+      async buscarDadosComParametro() {
+        this.carregando = true;
+        try {
+          const rota = Rotas.homeComParametro(this.valorParametro);
+          this.dadosParam = await Utils.apiFetch(rota);
+          console.log(this.dadosParam);
+        } catch (erro) {
+          console.error(erro);
+        } finally {
+          this.carregando = false;
+        }
+      }
+    }
+  });
+
+  app.component('app-header', AppHeader);
+  app.component('app-footer', AppFooter);
+  app.mount('#app');
 </script>
 </body>
 </html>

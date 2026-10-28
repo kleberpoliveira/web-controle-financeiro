@@ -10,6 +10,22 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "ApiControleFinanceiro.Controllers.HomeController",
+    "Method": "Get",
+    "RelativePath": "api/Home/{i}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "i",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "ApiControleFinanceiro.Controllers.WeatherForecastController",
     "Method": "Get",
     "RelativePath": "WeatherForecast",
