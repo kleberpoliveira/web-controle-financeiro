@@ -1,6 +1,6 @@
 @ApiControleFinanceiro_HostAddress = http://localhost:5091
 
-GET {{ApiControleFinanceiro_HostAddress}}/weatherforecast/
+GET {{ApiControleFinanceiro_HostAddress}}/teste/
 Accept: application/json
 
 ###
