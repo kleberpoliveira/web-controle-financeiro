@@ -12,5 +12,11 @@ namespace ApiControleFinanceiro.Controllers
         {
             return Ok(new { mensagem = "Olá Mundo!" });
         }
+
+        [HttpGet("{i}")]
+        public IActionResult Get(int i )
+        {
+            return Ok(new { mensagem = $"Olá Mundo! Você enviou o valor: {i}" });
+        }
     }
 }

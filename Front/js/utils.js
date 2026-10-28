@@ -14,6 +14,7 @@ const Utils = {
   },
 
   async apiFetch(endpoint, options = {}) {
+    console.log(endpoint);
     try {
       const response = await fetch(`${API_URL}${endpoint}`, {
         headers: {
