@@ -15,20 +15,9 @@
 <div id="app">
   <app-header></app-header>
   <main>
-    <div>   
-      <h2>Home</h2> 
-      <button @click="buscarDados">
-        {{ dados ? 'Recarregar dados' : 'Buscar dados do backend' }}
-      </button>
-     <div v-if="dados && dados.length > 0">
-    <ul>
-        <li v-for="item in dados" :key="item.id">
-            <h3>{{ item.id }} - {{ item.nome }}</h3>
-        </li>
-    </ul>
-</div>
-    </div>
-    <a href="https://localhost:7219/api/test" target="_blank">teste</a>
+    <div>    
+      aaaa
+    </div> 
   </main>
   <app-footer></app-footer> 
 </div>
@@ -47,7 +36,7 @@ const app = createApp({
     async buscarDados() {
 	  this.carregando = true;
 	  try {
-		this.dados = await Utils.apiFetch('/test');
+		this.dados = await Utils.apiFetch('/home');
     console.log(this.dados);
 	  } finally {
 		this.carregando = false;
