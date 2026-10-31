@@ -97,3 +97,18 @@ const AppFooter = {
     }
   }
 };
+
+const AppModal = {
+  props: ['mensagem', 'visivel'],
+  template: `
+    <div v-if="visivel" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;">
+      <div style="background: white; padding: 25px; border-radius: 8px; width: 400px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); text-align: center;">
+        <h3 style="color: #d9534f; margin-top: 0;">Atenção</h3>
+        <p style="margin: 20px 0; color: #333; font-size: 16px;">{{ mensagem }}</p>
+        <button @click="$emit('fechar')" style="background: #0275d8; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 14px;">
+          Fechar
+        </button>
+      </div>
+    </div>
+  `
+};
