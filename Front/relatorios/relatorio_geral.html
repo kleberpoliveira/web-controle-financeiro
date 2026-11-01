@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Teste de Relatório Dinâmico</title>
+        /**
+ * @typedef {import('./rotas.js').HomeParameters} HomeParameters
+ */
+ 
+    <!-- Vue 3 via CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    
+    <!-- TODOS OS IMPORTS NA ORDEM CORRETA -->
+    <script src="/js/config.js"></script>
+    <script src="/js/utils.js"></script>
+    <script src="/js/rotas.js"></script>
+    <script src="/js/estrutura.js"></script>
+
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background-color: #f4f4f4; }
+        .form-group { margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+
+    <div id="app">
+        <h1>Teste de Relatório Dinâmico</h1>
+
+        <div class="form-group">
+            <label for="dataInput">Informe a Data:</label>
+            <input type="text" id="dataInput" v-model="filtroData" placeholder="Ex: 2026-01-01" />
+            <button @click="buscarDados">Consultar API</button>
+        </div>
+
+        <hr>
+
+        <!-- Tabela Dinâmica -->
+        <div v-if="dadosTabela && dadosTabela.length > 0">
+            <h3>Resultado:</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th v-for="(valor, chave) in dadosTabela[0]" :key="chave">
+                            {{ chave }}
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="(linha, index) in dadosTabela" :key="index">
+                        <td v-for="(valor, chave) in linha" :key="chave">
+                            {{ valor !== null ? valor : 'NULL' }}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <p v-else-if="carregando">Carregando dados...</p>
+        <p v-else>Nenhum dado encontrado ou consulta ainda não realizada.</p>
+
+        <!-- Modal Global de Erros -->
+        <app-modal 
+            :visivel="Utils.modalState.visivel" 
+            :mensagem="Utils.modalState.mensagem" 
+            @fechar="Utils.fecharModal()">
+        </app-modal>
+    </div>
+ 
+    <script>
+        const { createApp } = Vue;
+
+        const app = createApp({
+            data() {
+                const anoAtual = new Date().getFullYear();
+
+                return {
+                    filtroData: `${anoAtual}-01-01`,
+                    dadosTabela: [],
+                    carregando: false,
+                    Utils: Utils
+                };
+            },
+            methods: {
+                async buscarDados() {
+                    if (!this.filtroData) {
+                        Utils.exibirModal("Por favor, preencha a data antes de consultar.");
+                        return;
+                    }
+
+                    this.carregando = true;
+                    this.dadosTabela = [];
+
+                    try {
+                        const payload = {
+                            Data: this.filtroData   
+                        };  
+
+                        
+                        this.dadosTabela = await Rotas.homePost(payload);
+
+                    } catch (erro) {
+                        console.error("Erro ao buscar dados:", erro);
+                    } finally {
+                        this.carregando = false;
+                    }
+                }
+            }
+        });
+
+        app.component('app-header', AppHeader);
+        app.component('app-footer', AppFooter);
+        app.component('app-modal', AppModal);
+
+        app.mount('#app');
+    </script>
+</body>
+</html>

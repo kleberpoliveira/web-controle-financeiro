@@ -1,30 +1,15 @@
- 
-const Rotas = {
-  home: () => '/home',
-  homeComParametro: (i) => `/home/${i}`, // Nova rota dinâmica
-  
-  
-  cadastros: {
-    cartao: {
-      listar: () => '/cadastros/cartao',
-      salvar: () => '/cadastros/cartao',
-      excluir: (id) => `/cadastros/cartao/${id}`
-    },
-    contaBancaria: {
-      listar: () => '/cadastros/conta-bancaria',
-      salvar: () => '/cadastros/conta-bancaria'
-    },
-    planoConta: {
-      listar: () => '/cadastros/plano-conta'
+class HomeParameters {
+    constructor(data) {
+        this.Data = data;
     }
-  },
+}
 
-  movimentacoes: {
-    lancamentos: {
-      listar: () => '/movimentacoes/lancamentos'
-    },
-    transferencias: {
-      salvar: () => '/movimentacoes/transferencias'
+const Rotas = {
+
+    // HOME
+    home: () => '/home',
+
+    async homePost(payload) {
+        return await Utils.postJson('/home', payload);
     }
-  }
 };

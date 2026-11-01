@@ -15,6 +15,8 @@ builder.Services.AddCors(options =>
         });
 });
 
+ApiControleFinanceiro.GLO.Conexao.SqlServer = ApiControleFinanceiro.TSQL.MontaStringConexao ("localhost", "controle_financeiro", "sa","***SENHA-REMOVIDA***");
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
