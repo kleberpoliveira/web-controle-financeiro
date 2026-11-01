@@ -11,15 +11,15 @@
   },
   {
     "ContainingType": "ApiControleFinanceiro.Controllers.HomeController",
-    "Method": "Get",
-    "RelativePath": "api/Home/{i}",
-    "HttpMethod": "GET",
+    "Method": "GetRelatorio",
+    "RelativePath": "api/Home",
+    "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "i",
-        "Type": "System.Int32",
+        "Name": "jsonPar",
+        "Type": "ApiControleFinanceiro.Controllers.HomeParameters",
         "IsRequired": true
       }
     ],

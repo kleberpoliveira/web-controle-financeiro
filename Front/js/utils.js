@@ -1,5 +1,8 @@
 // js/utils.js
+// Exemplo de como estruturar no seu utils.js existente:
 const Utils = {
+
+  
   // Tornamos o estado reativo para o Vue detectar a mudança instantaneamente
   modalState: Vue.reactive({
     visivel: false,
@@ -51,5 +54,16 @@ const Utils = {
       this.exibirModal("Não foi possível comunicar com o servidor.");
       throw error;
     }
-  }
+  },
+  
+    // Método padronizado para requisições POST com JSON
+    async postJson(url, dados) {
+        return await Utils.apiFetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dados)
+        });
+    },
+
+  
 };
