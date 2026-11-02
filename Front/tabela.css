@@ -1,0 +1,80 @@
+/* /css/tabela.css */
+
+.tabela-financeira {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    background-color: #ffffff;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    border-radius: 6px;
+}
+
+/* Garante bordas limpas em todas as células de cabeçalho e dados */
+.tabela-financeira th, 
+.tabela-financeira td {
+    border: 1px solid #252627; /* Borda cinza clara dividindo as colunas e linhas */
+    padding: 10px 15px;
+}
+
+
+/* ==========================================================
+   [PARTE 1] CABEÇALHO PRINCIPAL (Anos e Meses)
+   ========================================================== */
+.tabela-financeira th {
+    background-color: #252627 /* #34495e*/ !important;
+    color: white     /* #ffffff*/ !important;
+    font-weight: 600;
+     border: 1px solid white; /* Borda cinza clara dividindo as colunas e linhas */
+    padding: 10px 15px;
+}
+
+/* Tamanho fixo de 350px para a coluna de descrição */
+.coluna-descricao {
+    width: 350px;
+    min-width: 350px;
+    max-width: 350px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Tamanho fixo de 110px para todas as colunas de valores */
+.coluna-valor {
+    width: 110px;
+    min-width: 110px;
+    max-width: 110px;
+    text-align: right;
+    white-space: nowrap;
+}
+
+
+/* ==========================================================
+   [PARTE 3] LINHAS DE CABEÇALHO DO GRUPO (Agrupadores)
+   ========================================================== */
+.linha-grupo {
+    background-color: cadetblue /* #34495e*/ !important;
+    color: black  /* #ffffff*/ !important;
+    font-weight: bold;
+}
+
+.linha-grupo td {
+    padding: 10px 15px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+
+/* ==========================================================
+   [PARTE 2] LINHAS DE ITENS (Fundo e texto das linhas de dados)
+   ========================================================== */
+.linha-item td {
+    background-color: #ffffff; /* Mude aqui a cor de fundo das linhas de dados */
+    color: #000000;            /* Mude aqui a cor do texto das linhas de dados */
+}
+
+/* Efeito ao passar o mouse nas linhas de itens */
+.linha-item:hover td {
+    background-color: #f8fafc; /* Cor de fundo ao passar o mouse */
+}

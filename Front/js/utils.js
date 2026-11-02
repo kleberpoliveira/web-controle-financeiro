@@ -28,6 +28,16 @@ const Utils = {
     });
   },
   
+  formatarValor(valor) {
+      if (valor == null || valor === '') return '0,00';
+      const numero = Number(valor);
+      if (isNaN(numero)) return '0,00';
+      return numero.toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    },
+
   formatarData(data) {
     if (!data) return '';
     return new Date(data).toLocaleDateString('pt-BR');
