@@ -2,115 +2,216 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Teste de Relatório Dinâmico</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="tabela.css">
+    
     <!-- Vue 3 via CDN -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     
-    <!-- TODOS OS IMPORTS NA ORDEM CORRETA -->
-    <script src="/js/config.js"></script>
-    <script src="/js/utils.js"></script>
-    <script src="/js/rotas.js"></script>
-    <script src="/js/estrutura.js"></script>
+    <!-- Scripts do Sistema -->
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/rotas.js"></script>
+    <script src="js/estrutura.js"></script>
+    
+    <script>document.write(`<title>${TITULO_SITE}Relatório Dinâmico</title>`);</script>
+    
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-        th { background-color: #f4f4f4; }
-        .form-group { margin-bottom: 15px; }
+        .conteudo-relatorio {
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
 
-    <div id="app">
-        <h1>Teste de Relatório Dinâmico</h1>
+<div id="app">
+    <app-header></app-header>
+    
+    <main>
+        <div class="conteudo-relatorio"> 
 
-        <div class="form-group">
-            <label for="dataInput">Informe a Data:</label>
-            <input type="text" id="dataInput" v-model="filtroData" placeholder="Ex: 2026-01-01" />
-            <button @click="buscarDados">Consultar API</button>
-        </div>
+            <div class="form-group">
+                <label for="dataInput">Informe a Data:&nbsp;&nbsp;</label>
+                <input type="text" id="dataInput" v-model="filtroData" placeholder="Ex: 2026-01-01" />&nbsp;&nbsp;
+                <button @click="buscarDados">OK</button>
+            </div>
 
-        <hr>
+            <hr>
 
-        <!-- Tabela Dinâmica -->
-        <div v-if="dadosTabela && dadosTabela.length > 0">
-            <h3>Resultado:</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th v-for="(valor, chave) in dadosTabela[0]" :key="chave">
-                            {{ chave }}
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="(linha, index) in dadosTabela" :key="index">
-                        <td v-for="(valor, chave) in linha" :key="chave">
-                            {{ valor !== null ? valor : 'NULL' }}
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+            <!-- Tabela Dinâmica Agrupada com Cabeçalho de Anos e Meses por Extenso -->
+            <div v-if="dadosTabela && dadosTabela.length > 0"> 
+                <table class="tabela-financeira">
+                    <thead>
+                        <!-- LINHA 1: ANOS -->
+                        <tr>
+                            <!-- A coluna de descrição ocupa as 2 linhas de altura -->
+                            <th rowspan="2" class="coluna-descricao" style="text-align: left;">
+                                descricao
+                            </th>
+                            
+                            <!-- Agrupa as colunas por Ano dinamicamente -->
+                            <th v-for="(mesesDoAno, ano) in anosAgrupados" :key="ano" :colspan="mesesDoAno.length" style="text-align: center;">
+                                {{ ano }}
+                            </th>
+                        </tr>
+                        
+                        <!-- LINHA 2: MESES (Nomes Abreviados) -->
+                        <tr>
+                            <template v-for="(mesesDoAno, ano) in anosAgrupados">
+                                <th v-for="coluna in mesesDoAno" :key="coluna" class="coluna-valor" style="text-align: right;">
+                                    {{ formatarNomeMes(coluna) }}
+                                </th>
+                            </template>
+                        </tr>
+                    </thead>
+                    
+                    <tbody>
+                        <!-- Loop pelos grupos gerados dinamicamente -->
+                        <template v-for="(grupo, nomeGrupo) in dadosAgrupados" :key="nomeGrupo">
+                            
+                            <!-- Barra de Título do Grupo (Oculta se o grupo for 'CARTÃO') -->
+                            <tr v-if="nomeGrupo.toUpperCase() !== 'CARTÃO'" class="linha-grupo">
+                                <td :colspan="totalColunas">
+                                    {{ nomeGrupo }}
+                                </td>
+                            </tr>
 
-        <p v-else-if="carregando">Carregando dados...</p>
-        <p v-else>Nenhum dado encontrado ou consulta ainda não realizada.</p>
+                            <!-- Itens dentro do grupo -->
+                            <tr v-for="(linha, index) in grupo" :key="index" class="linha-item">
+                                <!-- Coluna Descrição -->
+                                <td class="coluna-descricao" style="text-align: left;">
+                                    {{ linha.descricao || linha.Descricao || '-' }}
+                                </td>
 
-        <!-- Modal Global de Erros -->
-        <app-modal 
-            :visivel="Utils.modalState.visivel" 
-            :mensagem="Utils.modalState.mensagem" 
-            @fechar="Utils.fecharModal()">
-        </app-modal>
-    </div>
+                                <!-- Colunas de Valores Dinâmicos alinhadas aos meses -->
+                                <td v-for="coluna in colunasValores" :key="coluna" class="coluna-valor" style="text-align: right;">
+                                    {{ linha[coluna] !== null && linha[coluna] !== undefined ? 
+                                       ((typeof linha[coluna] === 'number' || (!isNaN(linha[coluna]) && linha[coluna] !== '' && typeof linha[coluna] !== 'boolean')) ? Utils.formatarValor(linha[coluna]) : linha[coluna]) : '0,00' }}
+                                </td>
+                            </tr>
 
+                        </template>
+                    </tbody>
+                </table>
+            </div>
 
-    <script>
-        const { createApp } = Vue;
+            <p v-else-if="carregando">Carregando dados...</p>
+            <p v-else>Nenhum dado encontrado ou consulta ainda não realizada.</p>
+        </div> 
+    </main>
+    
+    <app-footer></app-footer> 
 
-        const app = createApp({
-            data() {
-                const anoAtual = new Date().getFullYear();
+    <!-- Modal Global -->
+    <app-modal 
+        :visivel="Utils.modalState.visivel" 
+        :mensagem="Utils.modalState.mensagem" 
+        @fechar="Utils.fecharModal()">
+    </app-modal>
+</div>
 
-                return {
-                    filtroData: `${anoAtual}-01-01`,
-                    dadosTabela: [],
-                    carregando: false,
-                    Utils: Utils
-                };
+<script>
+    const { createApp } = Vue;
+
+    const app = createApp({
+        data() {
+            const anoAtual = new Date().getFullYear();
+            return {
+                filtroData: `${anoAtual}-01-01`,
+                dadosTabela: [],
+                carregando: false
+            };
+        },
+        computed: {
+            // Extrai apenas as colunas de valores (remove 'agrupador' e 'descricao')
+            colunasValores() {
+                if (!this.dadosTabela || this.dadosTabela.length === 0) return [];
+                const chaves = Object.keys(this.dadosTabela[0]);
+                return chaves.filter(coluna => coluna.toLowerCase() !== 'agrupador' && coluna.toLowerCase() !== 'descricao');
             },
-            methods: {
-                async buscarDados() {
-                    if (!this.filtroData) {
-                        Utils.exibirModal("Por favor, preencha a data antes de consultar.");
-                        return;
+            // Agrupa os meses por ano com base no formato MM/AAAA retornado pela API
+            anosAgrupados() {
+                const anos = {};
+                this.colunasValores.forEach(coluna => {
+                    const partes = coluna.split('/');
+                    if (partes.length === 2) {
+                        const ano = partes[1];
+                        if (!anos[ano]) anos[ano] = [];
+                        anos[ano].push(coluna);
                     }
-
-                    this.carregando = true;
-                    this.dadosTabela = [];
-
-                    try {
-                        const payload = {
-                            Data: this.filtroData
-                        };
-
-                        // Chamada direta para o método encapsulado no arquivo de rotas
-                        this.dadosTabela = await Rotas.homePost(payload);
-
-                    } catch (erro) {
-                        console.error("Erro ao buscar dados:", erro);
-                    } finally {
-                        this.carregando = false;
+                });
+                return anos;
+            },
+            // Quantidade total de colunas para definir o colspan das barras de grupos
+            totalColunas() {
+                return 1 + this.colunasValores.length; // 1 da descrição + colunas de valores
+            },
+            // Mantido para compatibilidade caso algum componente precise
+            colunasDinamicas() {
+                if (!this.dadosTabela || this.dadosTabela.length === 0) return [];
+                const chaves = Object.keys(this.dadosTabela[0]);
+                return chaves.filter(coluna => coluna.toLowerCase() !== 'agrupador');
+            },
+            dadosAgrupados() {
+                if (!this.dadosTabela || this.dadosTabela.length === 0) return {};
+                
+                return this.dadosTabela.reduce((grupos, linha) => {
+                    const chaveGrupo = linha.agrupador || linha.Agrupador || 'GERAL';
+                    if (!grupos[chaveGrupo]) {
+                        grupos[chaveGrupo] = [];
                     }
+                    grupos[chaveGrupo].push(linha);
+                    return grupos;
+                }, {});
+            }
+        },
+        methods: {
+            // Converte o número do mês (ex: '10/2026') para o nome abreviado ('OUT')
+            formatarNomeMes(coluna) {
+                const partes = coluna.split('/');
+                if (partes.length !== 2) return coluna;
+                
+                const mesNum = parseInt(partes[0], 10);
+                const meses = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+                
+                return meses[mesNum - 1] || coluna;
+            },
+            async buscarDados() {
+                if (!this.filtroData) {
+                    Utils.exibirModal("Por favor, preencha a data antes de consultar.");
+                    return;
+                }
+
+                this.carregando = true;
+                this.dadosTabela = [];
+
+                try {
+                    const payload = {
+                        Data: this.filtroData
+                    };
+
+                    this.dadosTabela = await Rotas.homePost(payload);
+
+                } catch (erro) {
+                    console.error("Erro ao buscar dados:", erro);
+                } finally {
+                    this.carregando = false;
                 }
             }
-        });
+        }
+    });
 
-        app.component('app-header', AppHeader);
-        app.component('app-footer', AppFooter);
-        app.component('app-modal', AppModal);
+    app.config.globalProperties.Utils = Utils;
 
-        app.mount('#app');
-    </script>
+    app.component('app-header', AppHeader);
+    app.component('app-footer', AppFooter);
+    app.component('app-modal', AppModal);
+
+    app.mount('#app');
+</script>
 </body>
 </html>
