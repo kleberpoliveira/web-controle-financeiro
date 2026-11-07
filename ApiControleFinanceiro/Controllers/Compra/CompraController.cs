@@ -1,9 +1,6 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
-using System.Data;
-using System.Globalization;
-using System.Net;
+﻿using Microsoft.AspNetCore.Mvc;
+using System.Globalization; 
+using ApiControleFinanceiro.Excecoes;
 
 namespace ApiControleFinanceiro.Controllers.Compra
 {
@@ -14,7 +11,7 @@ namespace ApiControleFinanceiro.Controllers.Compra
         [HttpPost("LancarCompra")]
         public void Post([FromBody] CompraParameters jsonPar)
         {
-            
+
 
             if (DateTime.TryParseExact(jsonPar.Data, "dd/MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime dataConvertida))
             {
@@ -23,9 +20,9 @@ namespace ApiControleFinanceiro.Controllers.Compra
             }
             else
             {
-                throw new WebException("Formato de data inválido. Use o padrão DD/MM/AAAA.");
+                throw new RegraNegocioException("Formato de data inválido. Use o padrão DD/MM/AAAA.");
             }
-             
+
         }
     }
 }

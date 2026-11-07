@@ -40,6 +40,18 @@ const Utils = {
     return new Date(data).toLocaleDateString('pt-BR');
   },
 
+  extrairMensagemErro(respostaTexto, status) {
+    // Novo padrão da API: JSON { "mensagem": "..." }
+    try {
+      const json = JSON.parse(respostaTexto);
+      if (json && json.mensagem) return json.mensagem;
+    } catch { /* não era JSON, segue para o padrão antigo */ }
+
+    // Padrão antigo: texto da exceção com stack trace
+    const mensagemLimpa = respostaTexto.split(' at ')[0].trim();
+    return mensagemLimpa || `Erro na API: ${status}`;
+  },
+
   async apiFetch(endpoint, options = {}) {
     console.log(endpoint);
     try {
@@ -54,8 +66,7 @@ const Utils = {
       const respostaTexto = await response.text();
 
       if (!response.ok) {
-        let mensagemLimpa = respostaTexto.split(' at ')[0].trim();
-        throw new Error(mensagemLimpa || `Erro na API: ${response.status}`);
+        throw new Error(this.extrairMensagemErro(respostaTexto, response.status));
       }
 
       // Se a resposta estiver vazia, retorna null/sucesso sem quebrar no JSON

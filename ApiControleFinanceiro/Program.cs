@@ -29,6 +29,8 @@ app.UseHttpsRedirection();
 
 app.UseCors("PermitirFrontend");
 
+app.UseMiddleware<ApiControleFinanceiro.Middleware.TratamentoErrosMiddleware>();
+
 app.UseAuthorization();
 
 app.MapControllers();
