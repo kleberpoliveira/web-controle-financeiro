@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"> 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/css/style.css">
+
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="/js/config.js"></script>
+  <script src="/js/utils.js"></script>
+  <script src="/js/rotas.js?v=5"></script>
+  <script src="/js/estrutura.js"></script>
+
+  <script>document.write(`<title>${TITULO_SITE}Lançamentos</title>`);</script>
+</head>
+<body>
+
+<div id="app">
+  <app-header></app-header>
+  <main>
+    <div>     
+      <div style="margin-top: 20px;">
+        <label for="select-plano">Selecione o Plano de Conta:</label>
+        <br>
+        <select id="select-plano" v-model="planoSelecionado" style="padding: 8px; width: 350px; margin-top: 5px;">
+          <!-- Opções caso venham dados normais -->
+          <template v-if="dados_plano_conta.length > 0">
+            <option disabled value="">Selecione uma opção</option>
+            <option v-for="conta in dados_plano_conta" :key="conta.id_plano_conta" :value="conta.id_plano_conta">
+              {{ conta.codigo }} - {{ conta.descricao }}
+            </option>
+          </template>
+
+          <!-- Opção exibida caso dê erro ou não encontre registros e já tenha terminado de carregar -->
+          <template v-else-if="!carregando">
+            <option disabled value="">Erro ao carregar o plano de contas</option>
+          </template>
+
+          <!-- Opção exibida enquanto estiver carregando -->
+          <template v-else>
+            <option disabled value="">Carregando planos de conta...</option>
+          </template>
+        </select>
+      </div>
+      <hr style="margin: 20px 0;">
+
+      <form @submit.prevent="salvarCompra" style="max-width: 400px;">
+        <h3>Lançar Compra</h3>
+
+        <div style="margin-bottom: 10px;">
+          <label>Data:</label><br>
+          <input type="text" v-model="form.Data" placeholder="DD/MM/AAAA" required style="width: 100%; padding: 6px;">
+        </div>
+
+        <div style="margin-bottom: 10px;">
+          <label>Descrição:</label><br>
+          <input type="text" v-model="form.Descricao" required style="width: 100%; padding: 6px;">
+        </div>
+
+        <div style="margin-bottom: 10px;">
+          <label>Total:</label><br>
+          <input type="number" step="0.01" v-model.number="form.Total" required style="width: 100%; padding: 6px;">
+        </div>
+
+        <div style="margin-bottom: 15px;">
+          <label>Quantidade de Parcelas:</label><br>
+          <input type="number" v-model.number="form.QtdParcelas" min="1" required style="width: 100%; padding: 6px;">
+        </div>
+
+        <button type="submit" :disabled="enviando" style="padding: 10px 20px; background-color: #28a745; color: white; border: none; cursor: pointer;">
+          {{ enviando ? 'Salvando...' : 'Salvar Compra' }}
+        </button>
+      </form>
+
+    </div>
+  </main>
+  <app-footer></app-footer> 
+  <!-- Componente Modal para Erros -->
+  <app-modal :visivel="modalErroVisivel" :mensagem="mensagemErro" @fechar="modalErroVisivel = false"></app-modal>
+</div>
+
+<script>
+  const { createApp } = Vue;
+
+  const app = createApp({
+    data() {
+      return {
+        dados_plano_conta: [],
+        planoSelecionado: '',
+        carregando: false,
+        enviando: false,
+        modalErroVisivel: false,
+        form: {
+          Data: '',
+          Descricao: '',
+          Total: 0,
+          QtdParcelas: 1
+        }
+      };
+    }, 
+    methods: {
+      async buscarDados() {
+        this.carregando = true;
+        try {
+          const resposta = await Rotas.plano_conta.listar();
+          if (Array.isArray(resposta)) {
+            this.dados_plano_conta = resposta;
+          } else if (resposta && Array.isArray(resposta.dados)) {
+            this.dados_plano_conta = resposta.dados;
+          } else if (resposta && Array.isArray(resposta.resultado)) {
+            this.dados_plano_conta = resposta.resultado;
+          } else {
+            this.dados_plano_conta = [];
+          }
+        } catch (error) {
+          console.error("Erro ao buscar planos de contas:", error);
+          this.dados_plano_conta = [];
+        } finally {
+          this.carregando = false;
+        }
+      },
+      async salvarCompra() {
+        this.enviando = true;
+        try {
+          const payload = {
+            ...this.form,
+            IdPlanoConta: this.planoSelecionado
+          };
+          await Rotas.compra.lancarCompra(payload);
+          alert('Compra salva com sucesso!');
+          // Limpa o formulário e reseta o select
+          this.form = {
+            Data: '',
+            Descricao: '',
+            Total: 0,
+            QtdParcelas: 1
+          };
+          this.planoSelecionado = '';
+        } catch (error) {
+          console.error('Erro ao salvar compra:', error);
+          this.mensagemErro = error;
+          this.modalErroVisivel = true;
+        } finally {
+          this.enviando = false;
+        }
+      }
+    },
+    mounted() {
+      this.buscarDados();
+    }
+  });
+
+  app.component('app-header', AppHeader);
+  app.component('app-footer', AppFooter);
+  app.component('app-modal', AppModal);
+  app.mount('#app');
+</script>
+</body>
+</html>

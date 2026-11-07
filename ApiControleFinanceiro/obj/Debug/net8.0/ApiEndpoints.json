@@ -1,5 +1,27 @@
 [
   {
+    "ContainingType": "ApiControleFinanceiro.Controllers.Compra.CompraController",
+    "Method": "Post",
+    "RelativePath": "api/Compra/LancarCompra",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "jsonPar",
+        "Type": "ApiControleFinanceiro.Controllers.Compra.CompraParameters",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Void",
+        "MediaTypes": [],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
     "ContainingType": "ApiControleFinanceiro.Controllers.HomeController",
     "Method": "Get",
     "RelativePath": "api/Home",
@@ -23,6 +45,26 @@
         "IsRequired": true
       }
     ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ApiControleFinanceiro.Controllers.Plano_ContaController",
+    "Method": "Get",
+    "RelativePath": "api/Plano_Conta",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ApiControleFinanceiro.Controllers.Plano_ContaController",
+    "Method": "Listar",
+    "RelativePath": "api/Plano_Conta/Listar",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
     "ReturnTypes": []
   },
   {

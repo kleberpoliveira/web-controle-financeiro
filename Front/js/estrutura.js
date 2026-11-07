@@ -31,7 +31,7 @@ const AppHeader = {
             Movimentações ▼
           </button>
           <div class="dropdown-menu">
-            <a href="/movimentacoes/lancamentos.html" @click="closeMenus">Lançamentos Diversos</a>
+            <a href="/movimentacoes/compra.html" @click="closeMenus">Compra</a>
             <a href="/movimentacoes/transferencias.html" @click="closeMenus">Transferências entre contas</a>
           </div>
         </div>

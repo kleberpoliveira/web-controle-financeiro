@@ -1,9 +1,6 @@
-// js/utils.js
-// Exemplo de como estruturar no seu utils.js existente:
+// /js/utils.js
 const Utils = {
 
-  
-  // Tornamos o estado reativo para o Vue detectar a mudança instantaneamente
   modalState: Vue.reactive({
     visivel: false,
     mensagem: ''
@@ -54,26 +51,30 @@ const Utils = {
         ...options
       });
 
+      const respostaTexto = await response.text();
+
       if (!response.ok) {
-        throw new Error(`Erro na API: ${response.status}`);
+        let mensagemLimpa = respostaTexto.split(' at ')[0].trim();
+        throw new Error(mensagemLimpa || `Erro na API: ${response.status}`);
       }
 
-      return await response.json();
+      // Se a resposta estiver vazia, retorna null/sucesso sem quebrar no JSON
+      if (!respostaTexto) {
+        return null;
+      }
+
+      return JSON.parse(respostaTexto);
     } catch (error) { 
-      // Agora a modal vai pipocar na tela bonitinha!
-      this.exibirModal("Não foi possível comunicar com o servidor.");
+      this.exibirModal(error.message);
       throw error;
     }
   },
-  
-    // Método padronizado para requisições POST com JSON
-    async postJson(url, dados) {
-        return await Utils.apiFetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(dados)
-        });
-    },
 
-  
+  async postJson(url, dados) {
+      return await Utils.apiFetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(dados)
+      });
+  }
 };

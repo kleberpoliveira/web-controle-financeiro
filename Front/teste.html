@@ -74,7 +74,7 @@
                         <template v-for="(grupo, nomeGrupo) in dadosAgrupados" :key="nomeGrupo">
                             
                             <!-- Barra de Título do Grupo (Oculta se o grupo for 'CARTÃO') -->
-                            <tr v-if="nomeGrupo.toUpperCase() !== 'CARTÃO'" class="linha-grupo">
+                            <tr  class="linha-grupo">
                                 <td :colspan="totalColunas">
                                     {{ nomeGrupo }}
                                 </td>
@@ -194,7 +194,7 @@
                         Data: this.filtroData
                     };
 
-                    this.dadosTabela = await Rotas.homePost(payload);
+                    this.dadosTabela = await Rotas.home.post(payload);
 
                 } catch (erro) {
                     console.error("Erro ao buscar dados:", erro);

@@ -18,7 +18,7 @@ namespace ApiControleFinanceiro.Controllers
                     new SqlParameter("@data", new DateTime(DateTime.Now.Year, 1, 1))
             );*/
 
-            return Ok(new { mensagem = "Olá Mundo!" });
+            return Ok(new { mensagem = "Olá Mundo! Conexão OK." });
         }
 
         [HttpPost]

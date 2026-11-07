@@ -6,10 +6,26 @@ class HomeParameters {
 
 const Rotas = {
 
-    // HOME
-    home: () => '/home',
+    home: {
+        get: () => '/home',
+        async post(payload) {
+            return await Utils.postJson('/home', payload);
+        }
+    },
 
-    async homePost(payload) {
-        return await Utils.postJson('/home', payload);
+    plano_conta: {
+        async listar() {
+            return await Utils.apiFetch('/plano_conta/listar');
+        }
+    },
+
+    
+    compra: {
+        async lancarCompra(payload) {
+        return await Utils.postJson('/compra/lancarcompra', payload);
     }
+    },
+
+    
+
 };
