@@ -16,7 +16,7 @@ namespace ApiControleFinanceiro.Controllers
             
             DataTable tb = TSQL.ToTable(GLO.Conexao.SqlServer,"select * from plano_conta", "plano_conta");
 
-            string jsonResult = Newtonsoft.Json.JsonConvert.SerializeObject(tb);
+            string jsonResult = Json.Convert.Serialize(tb);
             return Content(jsonResult, "application/json");
         }
     }

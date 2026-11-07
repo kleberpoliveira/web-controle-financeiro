@@ -27,9 +27,9 @@ var app = builder.Build();
 
 app.UseHttpsRedirection();
 
-app.UseAuthorization();
-
 app.UseCors("PermitirFrontend");
+
+app.UseAuthorization();
 
 app.MapControllers();
 

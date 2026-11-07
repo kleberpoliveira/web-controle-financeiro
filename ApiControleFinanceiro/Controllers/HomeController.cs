@@ -25,8 +25,8 @@ namespace ApiControleFinanceiro.Controllers
         public IActionResult GetRelatorio([FromBody] HomeParameters jsonPar)
         {
             DataTable tb = TSQL.SPToTable(GLO.Conexao.SqlServer, "sp_relatorio_geral", new SqlParameter("@data", jsonPar.Data));
-
-            string jsonResult = Newtonsoft.Json.JsonConvert.SerializeObject(tb);
+            
+            string jsonResult = Json.Convert.Serialize(tb);
             return Content(jsonResult, "application/json");
         }
     }

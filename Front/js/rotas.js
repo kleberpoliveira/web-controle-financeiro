@@ -1,9 +1,3 @@
-class HomeParameters {
-    constructor(data) {
-        this.Data = data;
-    }
-}
-
 const Rotas = {
 
     home: {
