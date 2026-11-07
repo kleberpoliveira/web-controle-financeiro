@@ -15,7 +15,11 @@ builder.Services.AddCors(options =>
         });
 });
 
-ApiControleFinanceiro.GLO.Conexao.SqlServer = ApiControleFinanceiro.TSQL.MontaStringConexao ("localhost", "controle_financeiro", "sa","***SENHA-REMOVIDA***");
+var senhaBanco = builder.Configuration["Banco:Senha"]
+    ?? throw new InvalidOperationException("Senha do banco não configurada (Banco:Senha). Use: dotnet user-secrets set \"Banco:Senha\" \"...\"");
+
+ApiControleFinanceiro.GLO.Conexao.SqlServer = ApiControleFinanceiro.TSQL.MontaStringConexao("localhost", "controle_financeiro", "sa", senhaBanco);
+
 
 var app = builder.Build();
 
