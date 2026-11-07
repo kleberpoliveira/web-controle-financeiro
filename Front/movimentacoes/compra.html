@@ -75,8 +75,12 @@
     </div>
   </main>
   <app-footer></app-footer> 
-  <!-- Componente Modal para Erros -->
-  <app-modal :visivel="modalErroVisivel" :mensagem="mensagemErro" @fechar="modalErroVisivel = false"></app-modal>
+   <!-- Modal global de erros (usa Utils.modalState) -->
+  <app-modal
+    :visivel="Utils.modalState.visivel"
+    :mensagem="Utils.modalState.mensagem"
+    @fechar="Utils.fecharModal()">
+  </app-modal>
 </div>
 
 <script>
@@ -89,7 +93,6 @@
         planoSelecionado: '',
         carregando: false,
         enviando: false,
-        modalErroVisivel: false,
         form: {
           Data: '',
           Descricao: '',
@@ -97,7 +100,7 @@
           QtdParcelas: 1
         }
       };
-    }, 
+    },
     methods: {
       async buscarDados() {
         this.carregando = true;
@@ -113,6 +116,7 @@
             this.dados_plano_conta = [];
           }
         } catch (error) {
+          // O Utils.apiFetch já exibe o modal global com a mensagem do erro
           console.error("Erro ao buscar planos de contas:", error);
           this.dados_plano_conta = [];
         } finally {
@@ -137,9 +141,8 @@
           };
           this.planoSelecionado = '';
         } catch (error) {
+          // O Utils.apiFetch já exibe o modal global com a mensagem do erro
           console.error('Erro ao salvar compra:', error);
-          this.mensagemErro = error;
-          this.modalErroVisivel = true;
         } finally {
           this.enviando = false;
         }
@@ -149,6 +152,8 @@
       this.buscarDados();
     }
   });
+
+  app.config.globalProperties.Utils = Utils;
 
   app.component('app-header', AppHeader);
   app.component('app-footer', AppFooter);

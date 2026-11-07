@@ -25,8 +25,12 @@
   </main>
   <app-footer></app-footer> 
 
-  <!-- Componente Modal para Erros -->
-  <app-modal :visivel="modalErroVisivel" :mensagem="mensagemErro" @fechar="modalErroVisivel = false"></app-modal>
+    <!-- Modal global de erros (usa Utils.modalState) -->
+  <app-modal
+    :visivel="Utils.modalState.visivel"
+    :mensagem="Utils.modalState.mensagem"
+    @fechar="Utils.fecharModal()">
+  </app-modal>
 </div>
 
 <script>
@@ -36,11 +40,9 @@
     data() {
       return {
         dados: null,
-        carregando: false,
-        modalErroVisivel: false,
-        mensagemErro: ''
+        carregando: false
       };
-    }, 
+    },
     methods: {
       async buscarDados() {
         this.carregando = true;
@@ -48,9 +50,8 @@
           this.dados = await Utils.apiFetch(Rotas.home.get());
           console.log(this.dados);
         } catch (error) {
+          // O Utils.apiFetch já exibe o modal global com a mensagem do erro
           console.error("Erro ao buscar home:", error);
-          this.mensagemErro = "Não foi possível conectar ao servidor.";
-          this.modalErroVisivel = true;
         } finally {
           this.carregando = false;
         }
@@ -60,6 +61,8 @@
       this.buscarDados();
     }
   });
+
+  app.config.globalProperties.Utils = Utils;
 
   app.component('app-header', AppHeader);
   app.component('app-footer', AppFooter);

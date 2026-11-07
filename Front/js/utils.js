@@ -64,9 +64,14 @@ const Utils = {
       }
 
       return JSON.parse(respostaTexto);
-    } catch (error) { 
-      this.exibirModal(error.message);
-      throw error;
+    } catch (error) {
+      // Falha de rede (API desligada, CORS, certificado): o fetch lança TypeError
+      const erroFinal = (error instanceof TypeError)
+        ? new Error("Não foi possível conectar ao servidor.")
+        : error;
+
+      this.exibirModal(erroFinal.message);
+      throw erroFinal;
     }
   },
 
