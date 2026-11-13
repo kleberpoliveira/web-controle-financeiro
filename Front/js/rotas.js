@@ -13,13 +13,22 @@ const Rotas = {
         }
     },
 
-    
-    compra: {
-        async lancarCompra(payload) {
-        return await Utils.postJson('/compra/lancarcompra', payload);
-    }
+    cartao: {
+        async listar() {
+            return await Utils.apiFetch('/cartao/listar');
+        }
     },
 
-    
+    conta_bancaria: {
+        async listar() {
+            return await Utils.apiFetch('/conta_bancaria/listar');
+        }
+    },
+
+    compra: {
+        async lancarCompra(payload) {
+            return await Utils.postJson('/compra/lancarcompra', payload);
+        }
+    }
 
 };
