@@ -70,6 +70,7 @@
             <option value="CARTAO_CREDITO">Cartão de crédito</option>
             <option value="DEBITO_EM_CONTA">Débito em conta</option>
             <option value="PIX">PIX</option>
+            <option value="OUTRO">OUTRO</option>
           </select>
         </div>
 
@@ -198,6 +199,7 @@
         this.carregando = true;
         try {
           const resposta = await Rotas.plano_conta.listar();
+          console.log("resposta ", resposta);
           if (Array.isArray(resposta)) {
             this.dados_plano_conta = resposta;
           } else if (resposta && Array.isArray(resposta.dados)) {
@@ -247,6 +249,7 @@
             QtdParcelas: this.form.QtdParcelas,
             IdPlanoConta: this.planoSelecionado
           };
+          console.log("payload ", payload);
           await Rotas.compra.lancarCompra(payload);
           alert('Compra salva com sucesso!');
           // Limpa o formulário (a data volta para hoje) e reseta o select

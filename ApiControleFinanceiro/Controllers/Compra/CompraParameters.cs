@@ -6,7 +6,8 @@ namespace ApiControleFinanceiro.Controllers.Compra
     {
         CARTAO_CREDITO,
         DEBITO_EM_CONTA,
-        PIX
+        PIX,
+        OUTRO
     }
 
     public class CompraParameters
