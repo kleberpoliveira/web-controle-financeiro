@@ -22,7 +22,7 @@
       <div style="margin-top: 20px;">
         <label for="select-plano">Selecione o Plano de Conta:</label>
         <br>
-        <select id="select-plano" v-model="planoSelecionado" style="padding: 8px; width: 350px; margin-top: 5px;">
+        <select id="select-plano" form="form-compra" required v-model="planoSelecionado" style="padding: 8px; width: 350px; margin-top: 5px;">
           <!-- Opções caso venham dados normais -->
           <template v-if="dados_plano_conta.length > 0">
             <option disabled value="">Selecione uma opção</option>
@@ -44,12 +44,12 @@
       </div>
       <hr style="margin: 20px 0;">
 
-      <form @submit.prevent="salvarCompra" style="max-width: 400px;">
+      <form id="form-compra" @submit.prevent="salvarCompra" style="max-width: 400px;">
         <h3>Lançar Compra</h3>
 
         <div style="margin-bottom: 10px;">
           <label>Data:</label><br>
-          <input type="text" v-model="form.Data" placeholder="DD/MM/AAAA" required style="width: 100%; padding: 6px;">
+          <input type="text" :value="form.Data" @input="mascaraData" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" required style="width: 100%; padding: 6px;">
         </div>
 
         <div style="margin-bottom: 10px;">
@@ -122,8 +122,15 @@
 <script>
   const { createApp } = Vue;
 
+  // Data de hoje no formato DD/MM/AAAA
+  const hojeBR = () => new Date().toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
+
   const formVazio = () => ({
-    Data: '',
+    Data: hojeBR(),
     Descricao: '',
     Total: 0,
     TipoDeCompra: '',
@@ -170,6 +177,22 @@
       nomeCartao(c) { return c.NOME ?? c.nome; },
       idConta(cb)   { return cb.ID_CONTA_BANCARIA ?? cb.id_conta_bancaria; },
       nomeConta(cb) { return cb.DESCRICAO ?? cb.descricao; },
+
+      // Máscara de data: insere as barras automaticamente enquanto digita
+      mascaraData(e) {
+        const digitos = e.target.value.replace(/\D/g, '').slice(0, 8);
+        const apagando = e.inputType && e.inputType.startsWith('delete');
+
+        let v = digitos.slice(0, 2);
+        if (digitos.length > 2) v += '/' + digitos.slice(2, 4);
+        if (digitos.length > 4) v += '/' + digitos.slice(4);
+
+        // Coloca a barra logo depois do dia e do mês (só quando está digitando, não apagando)
+        if (!apagando && (digitos.length === 2 || digitos.length === 4)) v += '/';
+
+        this.form.Data = v;
+        e.target.value = v;
+      },
 
       async buscarDados() {
         this.carregando = true;
@@ -226,7 +249,7 @@
           };
           await Rotas.compra.lancarCompra(payload);
           alert('Compra salva com sucesso!');
-          // Limpa o formulário e reseta o select
+          // Limpa o formulário (a data volta para hoje) e reseta o select
           this.form = formVazio();
           this.planoSelecionado = '';
         } catch (error) {

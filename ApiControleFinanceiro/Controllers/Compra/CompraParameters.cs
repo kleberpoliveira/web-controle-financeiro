@@ -15,7 +15,7 @@ namespace ApiControleFinanceiro.Controllers.Compra
         public string Data { get; set; } = null!;
         public string Descricao { get; set; } = null!;
         public decimal Total { get; set; }
-
+        public int IdPlanoConta { get; set; }
         // Aceita o texto "CARTAO_CREDITO", "DEBITO_EM_CONTA" ou "PIX" vindo do front
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public TipoDeCompra TipoDeCompra { get; set; }
