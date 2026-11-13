@@ -1,17 +1,17 @@
 ﻿using Microsoft.Data.SqlClient;
 using System.Data;
-using System.Threading;
 
 namespace ApiControleFinanceiro
 {
-    public class TSQL
+    public class TSQL : IDisposable
     {
         #region VARIAVEIS PRIVATE
         private string strConexao;
         private SqlConnection db;
-        private SqlTransaction trans;
+        private SqlTransaction? trans;
         private bool usarTransacao;
         private bool erro = false;
+        private bool disposed = false;
         private List<SqlCommand> cmds = new List<SqlCommand>();
         #endregion
 
@@ -28,7 +28,16 @@ namespace ApiControleFinanceiro
             db = new SqlConnection(this.strConexao);
             if (abrirConexao == true)
             {
-                Open(usarTransacao);
+                try
+                {
+                    Open(usarTransacao);
+                }
+                catch
+                {
+                    // Se não conseguiu abrir, não deixa a conexão pendurada
+                    db.Dispose();
+                    throw;
+                }
             }
         }
 
@@ -38,7 +47,15 @@ namespace ApiControleFinanceiro
             db = new SqlConnection(this.strConexao);
             if (abrirConexao == true)
             {
-                Open(false);
+                try
+                {
+                    Open(false);
+                }
+                catch
+                {
+                    db.Dispose();
+                    throw;
+                }
             }
         }
 
@@ -57,10 +74,11 @@ namespace ApiControleFinanceiro
         #endregion
 
         #region CLOSE
+        // Confirma a transação (commit), a menos que tenha ocorrido erro ou forcaRollback = true,
+        // e fecha a conexão.
         public void Close(bool forcaRollback = false)
         {
-
-            if (usarTransacao)
+            if (usarTransacao && trans != null)
             {
                 if (erro || forcaRollback)
                 {
@@ -70,11 +88,58 @@ namespace ApiControleFinanceiro
                 {
                     trans.Commit();
                 }
+
+                trans.Dispose();
+                trans = null;
+                usarTransacao = false;
             }
 
             if (db.State != System.Data.ConnectionState.Closed)
             {
                 db.Close();
+            }
+        }
+        #endregion
+
+        #region DISPOSE
+        // Permite usar: using (var tsql = new TSQL(conexao, true, true)) { ... tsql.Close(); }
+        // Se o bloco terminar sem chamar Close() (por exemplo, por causa de uma exceção),
+        // a transação pendente é DESFEITA (rollback) e a conexão é fechada.
+        public void Dispose()
+        {
+            if (disposed)
+            {
+                return;
+            }
+            disposed = true;
+
+            try
+            {
+                if (usarTransacao && trans != null)
+                {
+                    try
+                    {
+                        trans.Rollback();
+                    }
+                    catch (Exception)
+                    {
+                        // Conexão já quebrada: o erro que importa é o original, não este
+                    }
+
+                    trans.Dispose();
+                    trans = null;
+                    usarTransacao = false;
+                }
+            }
+            finally
+            {
+                foreach (SqlCommand cmd in cmds)
+                {
+                    cmd.Dispose();
+                }
+                cmds.Clear();
+
+                db.Dispose();
             }
         }
         #endregion
@@ -141,9 +206,10 @@ namespace ApiControleFinanceiro
                 {
                     cmd.Transaction = trans;
                 }
-                SqlDataReader dr = cmd.ExecuteReader();
-                tbRet.Load(dr);
-                dr.Close();
+                using (SqlDataReader dr = cmd.ExecuteReader())
+                {
+                    tbRet.Load(dr);
+                }
             }
             catch (Exception)
             {
@@ -154,39 +220,11 @@ namespace ApiControleFinanceiro
             return tbRet;
         }
         #endregion
-         
-        //#region ExecuteReader
-        //public DataTable ExecuteReader(string comandoSql, string nomeTabela)
-        //{
-        //    DataTable tbRet = new DataTable(nomeTabela);
-        //    try
-        //    {
-        //        SqlCommand cmd = new SqlCommand();
-        //        cmd.CommandText = comandoSql;
-        //        cmd.CommandType = CommandType.Text;
-        //        cmd.Connection = db;
-        //        if (usarTransacao)
-        //        {
-        //            cmd.Transaction = trans;
-        //        }
-        //        SqlDataReader dr = cmd.ExecuteReader();
-        //        tbRet.Load(dr);
-        //        dr.Close();
-        //    }
-        //    catch (Exception)
-        //    {
-        //        erro = true;
-        //        throw;
-        //    }
-
-        //    return tbRet;
-        //}
-        //#endregion
 
         #region ExecuteScalar
-        public Object ExecuteScalar(SqlCommand cmd)
+        public Object? ExecuteScalar(SqlCommand cmd)
         {
-            Object ret = null;
+            Object? ret = null;
             try
             {
                 cmd.Connection = db;
@@ -204,6 +242,12 @@ namespace ApiControleFinanceiro
 
             return ret;
         }
+
+        // Versão tipada: ex.: int novoId = tsql.ExecuteScalar<int>(cmd);
+        public T ExecuteScalar<T>(SqlCommand cmd)
+        {
+            return ConverterValor<T>(ExecuteScalar(cmd));
+        }
         #endregion
 
         /*=====================================================
@@ -215,18 +259,7 @@ namespace ApiControleFinanceiro
         {
             using (SqlConnection db = new SqlConnection(conexao))
             {
-                try
-                {
-                    db.Open();
-                }
-                catch (Exception)
-                {
-                    throw;
-                }
-                finally
-                {
-                    db.Close();
-                }
+                db.Open();
             }
         }
         #endregion
@@ -249,37 +282,53 @@ namespace ApiControleFinanceiro
         }
         #endregion 
 
+        #region METODO PAR (CRIA PARAMETRO)
+        // Cria um SqlParameter e troca null por DBNull.Value
+        // Uso: TSQL.Par("@id_conta_bancaria", jsonPar.IdContaBancaria)
+        public static SqlParameter Par(string nome, object? valor)
+        {
+            return new SqlParameter(nome, valor ?? DBNull.Value);
+        }
+        #endregion
+
+        #region METODO CONVERTER VALOR (PRIVADO)
+        // Converte o retorno de um ExecuteScalar para o tipo pedido.
+        // Se vier null/DBNull, devolve o valor padrão do tipo (0, null, etc.)
+        private static T ConverterValor<T>(object? valor)
+        {
+            if (valor == null || valor == DBNull.Value)
+            {
+                return default!;
+            }
+
+            Type tipo = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
+            return (T)System.Convert.ChangeType(valor, tipo);
+        }
+        #endregion
+
         #region METODOS ExecuteNonQuery 
 
         public static void ExecuteNonQuery(string conexao, SqlCommand cmd)
         {
-            SqlConnection db = new SqlConnection(conexao);
-            try
+            using (SqlConnection db = new SqlConnection(conexao))
             {
                 db.Open();
                 cmd.Connection = db;
                 cmd.ExecuteNonQuery();
             }
-            catch (Exception)
-            {
-                throw;
-            }
-            finally
-            {
-                db.Close();
-            }
         }
 
         public static void ExecuteNonQuery(string conexao, string comandoSql, params SqlParameter[] par)
         {
-            SqlCommand cmd = new SqlCommand();
-            cmd.CommandType = CommandType.Text;
-            cmd.CommandText = comandoSql;
-            if (par != null)
+            using (SqlCommand cmd = new SqlCommand(comandoSql))
             {
-                cmd.Parameters.AddRange(par);
+                cmd.CommandType = CommandType.Text;
+                if (par != null)
+                {
+                    cmd.Parameters.AddRange(par);
+                }
+                ExecuteNonQuery(conexao, cmd);
             }
-            ExecuteNonQuery(conexao, cmd);
         }
 
         #endregion
@@ -287,163 +336,108 @@ namespace ApiControleFinanceiro
         #region METODO SP TO TABLE 
         public static DataTable SPToTable(string conexao, string nomeProcedure, params SqlParameter[] par)
         {
-            DataTable tbRet = new DataTable();
-
-            SqlConnection db = new SqlConnection(conexao);
-            try
-            {
-                SqlCommand cmd = new SqlCommand();
-                cmd.Connection = db;
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.CommandText = nomeProcedure;
-                cmd.Parameters.AddRange(par);
-                db.Open();
-                SqlDataReader dr = cmd.ExecuteReader();
-                tbRet.Load(dr);
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-            finally
-            {
-                db.Close();
-            }
-            return tbRet;
+            return SPToTable(conexao, nomeProcedure, 30, par);
         }
 
         public static DataTable SPToTable(string conexao, string nomeProcedure, Int32 timeOut, params SqlParameter[] par)
         {
-            DataTable tbRet = new DataTable();
-
-            SqlConnection db = new SqlConnection(conexao);
-            try
+            using (SqlConnection db = new SqlConnection(conexao))
+            using (SqlCommand cmd = new SqlCommand(nomeProcedure, db))
             {
-                SqlCommand cmd = new SqlCommand();
-                cmd.Connection = db;
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.CommandTimeout = timeOut;
-                db.Open();
-                SqlDataReader dr = cmd.ExecuteReader();
-                tbRet.Load(dr);
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-            finally
-            {
-                db.Close();
-            }
+                if (par != null)
+                {
+                    cmd.Parameters.AddRange(par);
+                }
 
-            return tbRet;
+                db.Open();
+                using (SqlDataReader dr = cmd.ExecuteReader())
+                {
+                    DataTable tbRet = new DataTable();
+                    tbRet.Load(dr);
+                    return tbRet;
+                }
+            }
         }
         #endregion
 
         #region METODO TO TABLE
         public static DataTable ToTable(string conexao, SqlCommand cmd, string nomeTabela)
         {
-            DataTable tbRet = new DataTable();
-            SqlConnection db = new SqlConnection(conexao);
-            SqlDataReader dr = null;
-            try
+            using (SqlConnection db = new SqlConnection(conexao))
             {
                 cmd.Connection = db;
                 db.Open();
-                dr = cmd.ExecuteReader();
-                tbRet = new DataTable();
-                tbRet.Load(dr);
-
-                tbRet.TableName = nomeTabela;
+                using (SqlDataReader dr = cmd.ExecuteReader())
+                {
+                    DataTable tbRet = new DataTable(nomeTabela);
+                    tbRet.Load(dr);
+                    return tbRet;
+                }
             }
-            catch
-            {
-                throw;
-            }
-            finally
-            {
-                dr.Close();
-                db.Close();
-            }
-
-            return tbRet;
         }
 
         public static DataTable ToTable(string conexao, string comandoSql, string nomeTabela, params SqlParameter[] par)
         {
-
-            SqlCommand cmd = new SqlCommand();
-            cmd.CommandType = CommandType.Text;
-            cmd.CommandText = comandoSql;
-            if (par != null)
-            {
-                cmd.Parameters.AddRange(par);
-            }
-            return ToTable(conexao, cmd, nomeTabela);
+            return ToTable(conexao, comandoSql, nomeTabela, 30, par);
         }
 
         public static DataTable ToTable(string conexao, string comandoSql, string nomeTabela, Int32 timeOut, params SqlParameter[] par)
         {
-            SqlCommand cmd = new SqlCommand();
-            cmd.CommandType = CommandType.Text;
-            cmd.CommandText = comandoSql;
-            cmd.CommandTimeout = timeOut;
-            if (par != null)
+            using (SqlCommand cmd = new SqlCommand(comandoSql))
             {
-                cmd.Parameters.AddRange(par);
+                cmd.CommandType = CommandType.Text;
+                cmd.CommandTimeout = timeOut;
+                if (par != null)
+                {
+                    cmd.Parameters.AddRange(par);
+                }
+                return ToTable(conexao, cmd, nomeTabela);
             }
-            return ToTable(conexao, cmd, nomeTabela);
         }
 
         #endregion
 
         #region METODO SCALAR
-        public static Object ExecuteScalar(string conexao, SqlCommand cmd)
+        public static Object? ExecuteScalar(string conexao, SqlCommand cmd)
         {
-            object ret = null;
-
-            SqlConnection db = new SqlConnection(conexao);
-            try
+            using (SqlConnection db = new SqlConnection(conexao))
             {
                 cmd.Connection = db;
                 db.Open();
-                ret = cmd.ExecuteScalar();
+                return cmd.ExecuteScalar();
             }
-            catch (Exception)
-            {
-                throw;
-            }
-            finally
-            {
-                db.Close();
-            }
-
-            return ret;
         }
 
-        public static Object ExecuteScalar(string conexao, string comandoSql, params SqlParameter[] par)
+        public static Object? ExecuteScalar(string conexao, string comandoSql, params SqlParameter[] par)
         {
-            SqlCommand cmd = new SqlCommand();
-            cmd.CommandType = CommandType.Text;
-            cmd.CommandText = comandoSql;
-            if (par != null)
-            {
-                cmd.Parameters.AddRange(par);
-            }
-            return ExecuteScalar(conexao, cmd);
+            return ExecuteScalar(conexao, comandoSql, 30, par);
         }
 
-        public static Object ExecuteScalar(string conexao, string comandoSql, Int32 timeOut, params SqlParameter[] par)
+        public static Object? ExecuteScalar(string conexao, string comandoSql, Int32 timeOut, params SqlParameter[] par)
         {
-            SqlCommand cmd = new SqlCommand();
-            cmd.CommandType = CommandType.Text;
-            cmd.CommandText = comandoSql;
-            cmd.CommandTimeout = timeOut;
-            if (par != null)
+            using (SqlCommand cmd = new SqlCommand(comandoSql))
             {
-                cmd.Parameters.AddRange(par);
+                cmd.CommandType = CommandType.Text;
+                cmd.CommandTimeout = timeOut;
+                if (par != null)
+                {
+                    cmd.Parameters.AddRange(par);
+                }
+                return ExecuteScalar(conexao, cmd);
             }
-            return ExecuteScalar(conexao, cmd);
+        }
+
+        // Versões tipadas: ex.: int total = TSQL.ExecuteScalar<int>(conexao, "select count(*) from cartao");
+        public static T ExecuteScalar<T>(string conexao, SqlCommand cmd)
+        {
+            return ConverterValor<T>(ExecuteScalar(conexao, cmd));
+        }
+
+        public static T ExecuteScalar<T>(string conexao, string comandoSql, params SqlParameter[] par)
+        {
+            return ConverterValor<T>(ExecuteScalar(conexao, comandoSql, par));
         }
 
         #endregion
@@ -460,13 +454,13 @@ namespace ApiControleFinanceiro
                        and name not like 'report%'
                      order by name";
 
-            DataTable tbret = ToTable(conexao, comandoSql, null);
+            DataTable tbret = ToTable(conexao, comandoSql, "databases");
 
             if (tbret != null && tbret.Rows.Count > 0)
             {
                 foreach (DataRow row in tbret.Rows)
                 {
-                    ret.Add(row["name"].ToString());
+                    ret.Add(row["name"].ToString()!);
                 }
             }
 
