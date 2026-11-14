@@ -26,9 +26,8 @@ namespace ApiControleFinanceiro.Controllers.Compra
 
         private static void Gravar(CompraParameters p, DateTime dataCompra)
         {
-            // TEMPORÁRIO: por enquanto só o PIX sem conta é gravado (3b e 3c vêm depois)
-            bool pixSemConta = (p.TipoDeCompra == TipoDeCompra.PIX && p.IdContaBancaria == null) || p.TipoDeCompra == TipoDeCompra.OUTRO;
-            if (!pixSemConta)
+            // TEMPORÁRIO: por enquanto gravam OUTRO e PIX (débito em conta e cartão vêm depois)
+            if (p.TipoDeCompra != TipoDeCompra.OUTRO && p.TipoDeCompra != TipoDeCompra.PIX)
             {
                 throw new RegraNegocioException("A gravação deste tipo de compra ainda não foi implementada.");
             }
@@ -42,6 +41,18 @@ namespace ApiControleFinanceiro.Controllers.Compra
             if (qtdPlano == 0)
             {
                 throw new RegraNegocioException("Plano de conta não encontrado.");
+            }
+
+            // No PIX, a conta bancária precisa existir
+            if (p.TipoDeCompra == TipoDeCompra.PIX)
+            {
+                int qtdConta = TSQL.ExecuteScalar<int>(conexao,
+                    "select count(*) from conta_bancaria where id_conta_bancaria = @id",
+                    TSQL.Par("@id", p.IdContaBancaria));
+                if (qtdConta == 0)
+                {
+                    throw new RegraNegocioException("Conta bancária não encontrada.");
+                }
             }
 
             decimal total = Math.Round(p.Total, 2);
@@ -65,13 +76,30 @@ namespace ApiControleFinanceiro.Controllers.Compra
                     decimal valor = valores[numero - 1];
                     DateTime vencimento = CompraCalculo.VencimentoPadrao(dataCompra, numero);
 
+                    // Movimento na conta bancária (só no PIX), um por parcela
+                    int? idMovto = null;
+                    if (p.TipoDeCompra == TipoDeCompra.PIX)
+                    {
+                        // PIX hoje: data de hoje e conciliado. Senão: data do vencimento e não conciliado.
+                        DateTime dataMovto = p.PixHoje ? DateTime.Today : vencimento;
+
+                        idMovto = tsql.ExecuteScalar<int>(Comando(@"
+                            insert into conta_bancaria_movto (id_conta_bancaria, data, tipo_movimento, tipo_opercao, conciliado, valor)
+                            values (@id_conta_bancaria, @data, 'D', 'PIX_SAIDA', @conciliado, @valor);
+                            select cast(scope_identity() as int);",
+                            TSQL.Par("@id_conta_bancaria", p.IdContaBancaria),
+                            TSQL.Par("@data", dataMovto),
+                            TSQL.Par("@conciliado", p.PixHoje),
+                            TSQL.Par("@valor", valor)));
+                    }
+
                     int idParc = tsql.ExecuteScalar<int>(Comando(@"
                         insert into cf_parc (id_cf_cab, numero, id_conta_bancaria_movto, id_fatura, valor, vencimento)
                         values (@id_cf_cab, @numero, @id_movto, @id_fatura, @valor, @vencimento);
                         select cast(scope_identity() as int);",
                         TSQL.Par("@id_cf_cab", idCab),
                         TSQL.Par("@numero", numero),
-                        TSQL.Par("@id_movto", null),
+                        TSQL.Par("@id_movto", idMovto),
                         TSQL.Par("@id_fatura", null),
                         TSQL.Par("@valor", valor),
                         TSQL.Par("@vencimento", vencimento)));
@@ -135,12 +163,17 @@ namespace ApiControleFinanceiro.Controllers.Compra
                     break;
 
                 case TipoDeCompra.PIX:
-                    // PIX com conta escolhida é um pagamento feito na hora: só pode ter 1 parcela
-                    if (p.IdContaBancaria != null && p.QtdParcelas != 1)
+                    if (p.IdContaBancaria == null)
                     {
-                        throw new RegraNegocioException("PIX com conta selecionada só pode ser lançado em 1 parcela.");
+                        throw new RegraNegocioException("Selecione a conta bancária para o PIX.");
                     }
-                    break; 
+
+                    // PIX lançado com a data de hoje é um pagamento feito na hora: só pode ter 1 parcela
+                    if (p.PixHoje && p.QtdParcelas != 1)
+                    {
+                        throw new RegraNegocioException("PIX lançado com a data de hoje só pode ter 1 parcela.");
+                    }
+                    break;
             }
         }
     }

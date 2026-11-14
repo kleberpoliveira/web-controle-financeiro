@@ -74,6 +74,14 @@
           </select>
         </div>
 
+        <!-- Aparece só para PIX -->
+        <div v-if="ehPix" style="margin-bottom: 10px;">
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input type="checkbox" v-model="form.PixHoje">
+            Lançar PIX com a data de hoje
+          </label>
+        </div>
+
         <!-- Aparece só para cartão de crédito -->
         <div v-if="ehCartao" style="margin-bottom: 10px;">
           <label>Cartão:</label><br>
@@ -85,22 +93,21 @@
           </select>
         </div>
 
-        <!-- Aparece para débito em conta (obrigatório) e PIX (opcional) -->
+        <!-- Aparece para débito em conta e PIX (a conta é sempre obrigatória) -->
         <div v-if="ehConta" style="margin-bottom: 10px;">
-          <label>Conta Bancária<span v-if="!contaObrigatoria"> (opcional)</span>:</label><br>
-          <select v-model="form.IdContaBancaria" :required="contaObrigatoria" style="width: 100%; padding: 6px;">
-            <option v-if="contaObrigatoria" disabled value="">Selecione uma opção</option>
-            <option v-else value="">Nenhuma (definir depois)</option>
+          <label>Conta Bancária:</label><br>
+          <select v-model="form.IdContaBancaria" required style="width: 100%; padding: 6px;">
+            <option disabled value="">Selecione uma opção</option>
             <option v-for="cb in contasBancarias" :key="idConta(cb)" :value="idConta(cb)">
               {{ nomeConta(cb) }}
             </option>
           </select>
         </div>
 
-        <!-- Vale para qualquer tipo de compra -->
+        <!-- Vale para qualquer tipo de compra (bloqueado em 1 quando o PIX é lançado com a data de hoje) -->
         <div style="margin-bottom: 15px;">
           <label>Quantidade de Parcelas:</label><br>
-          <input type="number" v-model.number="form.QtdParcelas" min="1" required style="width: 100%; padding: 6px;">
+          <input type="number" v-model.number="form.QtdParcelas" min="1" :disabled="form.PixHoje" required style="width: 100%; padding: 6px;">
         </div>
 
         <button type="submit" :disabled="enviando" style="padding: 10px 20px; background-color: #28a745; color: white; border: none; cursor: pointer;">
@@ -137,6 +144,7 @@
     TipoDeCompra: '',
     IdCartao: '',
     IdContaBancaria: '',
+    PixHoje: false,
     QtdParcelas: 1
   });
 
@@ -156,13 +164,12 @@
       ehCartao() {
         return this.form.TipoDeCompra === 'CARTAO_CREDITO';
       },
-      // Débito em conta e PIX mostram o select de conta bancária
+      ehPix() {
+        return this.form.TipoDeCompra === 'PIX';
+      },
+      // Débito em conta e PIX mostram o select de conta bancária (sempre obrigatória)
       ehConta() {
         return this.form.TipoDeCompra === 'DEBITO_EM_CONTA' || this.form.TipoDeCompra === 'PIX';
-      },
-      // Só o débito em conta exige escolher a conta (no PIX é opcional)
-      contaObrigatoria() {
-        return this.form.TipoDeCompra === 'DEBITO_EM_CONTA';
       }
     },
     watch: {
@@ -170,6 +177,13 @@
       'form.TipoDeCompra'() {
         this.form.IdCartao = '';
         this.form.IdContaBancaria = '';
+        this.form.PixHoje = false;
+      },
+      // PIX lançado com a data de hoje só pode ter 1 parcela
+      'form.PixHoje'(marcado) {
+        if (marcado) {
+          this.form.QtdParcelas = 1;
+        }
       }
     },
     methods: {
@@ -244,8 +258,8 @@
             Total: this.form.Total,
             TipoDeCompra: this.form.TipoDeCompra,
             IdCartao: this.ehCartao ? this.form.IdCartao : null,
-            // No PIX, se nenhuma conta foi escolhida, vai null
-            IdContaBancaria: (this.ehConta && this.form.IdContaBancaria !== '') ? this.form.IdContaBancaria : null,
+            IdContaBancaria: this.ehConta ? this.form.IdContaBancaria : null,
+            PixHoje: this.ehPix && this.form.PixHoje,
             QtdParcelas: this.form.QtdParcelas,
             IdPlanoConta: this.planoSelecionado
           };
