@@ -26,11 +26,7 @@ namespace ApiControleFinanceiro.Controllers.Compra
 
         private static void Gravar(CompraParameters p, DateTime dataCompra)
         {
-            // TEMPORÁRIO: por enquanto gravam OUTRO, PIX e DEBITO_EM_CONTA (cartão vem depois)
-            if (p.TipoDeCompra == TipoDeCompra.CARTAO_CREDITO)
-            {
-                throw new RegraNegocioException("A gravação deste tipo de compra ainda não foi implementada.");
-            }
+            bool ehCartao = p.TipoDeCompra == TipoDeCompra.CARTAO_CREDITO;
 
             // PIX e débito em conta criam um movimento na conta bancária para cada parcela
             bool gravaMovimento = p.TipoDeCompra == TipoDeCompra.PIX || p.TipoDeCompra == TipoDeCompra.DEBITO_EM_CONTA;
@@ -63,6 +59,20 @@ namespace ApiControleFinanceiro.Controllers.Compra
                 }
             }
 
+            // No cartão, o cartão precisa existir e precisamos do dia de fechamento
+            int diaFechamento = 0;
+            if (ehCartao)
+            {
+                object? resultado = TSQL.ExecuteScalar(conexao,
+                    "select dia_fechamento from cartao where id_cartao = @id",
+                    TSQL.Par("@id", p.IdCartao));
+                if (resultado == null || resultado == DBNull.Value)
+                {
+                    throw new RegraNegocioException("Cartão não encontrado.");
+                }
+                diaFechamento = System.Convert.ToInt32(resultado);
+            }
+
             decimal total = Math.Round(p.Total, 2);
             List<decimal> valores = CompraCalculo.DividirValor(total, p.QtdParcelas);
 
@@ -82,7 +92,11 @@ namespace ApiControleFinanceiro.Controllers.Compra
                 for (int numero = 1; numero <= p.QtdParcelas; numero++)
                 {
                     decimal valor = valores[numero - 1];
-                    DateTime vencimento = CompraCalculo.VencimentoPadrao(dataCompra, numero);
+
+                    // No cartão o vencimento respeita o fechamento; nos demais é sempre dia 10 do mês seguinte
+                    DateTime vencimento = ehCartao
+                        ? CompraCalculo.VencimentoCartao(dataCompra, diaFechamento, numero)
+                        : CompraCalculo.VencimentoPadrao(dataCompra, numero);
 
                     // Movimento na conta bancária (PIX e débito em conta), um por parcela
                     int? idMovto = null;
@@ -102,6 +116,13 @@ namespace ApiControleFinanceiro.Controllers.Compra
                             TSQL.Par("@valor", valor)));
                     }
 
+                    // Fatura do cartão (busca; se não existir, cria), uma por vencimento
+                    int? idFatura = null;
+                    if (ehCartao)
+                    {
+                        idFatura = BuscarOuCriarFatura(tsql, p.IdCartao!.Value, vencimento);
+                    }
+
                     int idParc = tsql.ExecuteScalar<int>(Comando(@"
                         insert into cf_parc (id_cf_cab, numero, id_conta_bancaria_movto, id_fatura, valor, vencimento)
                         values (@id_cf_cab, @numero, @id_movto, @id_fatura, @valor, @vencimento);
@@ -109,7 +130,7 @@ namespace ApiControleFinanceiro.Controllers.Compra
                         TSQL.Par("@id_cf_cab", idCab),
                         TSQL.Par("@numero", numero),
                         TSQL.Par("@id_movto", idMovto),
-                        TSQL.Par("@id_fatura", null),
+                        TSQL.Par("@id_fatura", idFatura),
                         TSQL.Par("@valor", valor),
                         TSQL.Par("@vencimento", vencimento)));
 
@@ -124,6 +145,32 @@ namespace ApiControleFinanceiro.Controllers.Compra
 
                 tsql.Close(); // confirma tudo (commit)
             }
+        }
+
+        // Procura a fatura do cartão com o vencimento informado; se não existir, cria.
+        // Roda dentro da transação da compra.
+        private static int BuscarOuCriarFatura(TSQL tsql, int idCartao, DateTime vencimento)
+        {
+            int idFatura = tsql.ExecuteScalar<int>(Comando(@"
+                select top 1 id_fatura
+                  from fatura
+                 where id_cartao = @id_cartao
+                   and data_vencimento = @vencimento
+                 order by id_fatura",
+                TSQL.Par("@id_cartao", idCartao),
+                TSQL.Par("@vencimento", vencimento)));
+
+            if (idFatura != 0)
+            {
+                return idFatura;
+            }
+
+            return tsql.ExecuteScalar<int>(Comando(@"
+                insert into fatura (id_cartao, data_vencimento)
+                values (@id_cartao, @vencimento);
+                select cast(scope_identity() as int);",
+                TSQL.Par("@id_cartao", idCartao),
+                TSQL.Par("@vencimento", vencimento)));
         }
 
         private static SqlCommand Comando(string sql, params SqlParameter[] par)
