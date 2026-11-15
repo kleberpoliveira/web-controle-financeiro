@@ -36,7 +36,7 @@
 
             <div class="form-group">
                 <label for="dataInput">Informe a Data:&nbsp;&nbsp;</label>
-                <input type="text" id="dataInput" v-model="filtroData" placeholder="Ex: 2026-01-01" />&nbsp;&nbsp;
+                <input type="text" id="dataInput" :value="filtroData" @input="mascaraData" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" />&nbsp;&nbsp;
                 <button @click="buscarDados">OK</button>
             </div>
 
@@ -121,7 +121,7 @@
         data() {
             const anoAtual = new Date().getFullYear();
             return {
-                filtroData: `${anoAtual}-01-01`,
+                filtroData: `01/01/${anoAtual}`,
                 dadosTabela: [],
                 carregando: false
             };
@@ -180,9 +180,50 @@
                 
                 return meses[mesNum - 1] || coluna;
             },
+
+            // Máscara de data: insere as barras automaticamente enquanto digita
+            mascaraData(e) {
+                const digitos = e.target.value.replace(/\D/g, '').slice(0, 8);
+                const apagando = e.inputType && e.inputType.startsWith('delete');
+
+                let v = digitos.slice(0, 2);
+                if (digitos.length > 2) v += '/' + digitos.slice(2, 4);
+                if (digitos.length > 4) v += '/' + digitos.slice(4);
+
+                // Coloca a barra logo depois do dia e do mês (só quando está digitando, não apagando)
+                if (!apagando && (digitos.length === 2 || digitos.length === 4)) v += '/';
+
+                this.filtroData = v;
+                e.target.value = v;
+            },
+
+            // Converte 'DD/MM/AAAA' para 'AAAA-MM-DD' (formato que a API espera).
+            // Devolve null se o texto não for uma data real (ex.: 31/02/2026).
+            dataParaIso(texto) {
+                const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(texto || '');
+                if (!m) return null;
+
+                const dia = parseInt(m[1], 10);
+                const mes = parseInt(m[2], 10);
+                const ano = parseInt(m[3], 10);
+
+                const d = new Date(ano, mes - 1, dia);
+                if (d.getFullYear() !== ano || d.getMonth() !== mes - 1 || d.getDate() !== dia) {
+                    return null;
+                }
+
+                return `${m[3]}-${m[2]}-${m[1]}`;
+            },
+
             async buscarDados() {
                 if (!this.filtroData) {
                     Utils.exibirModal("Por favor, preencha a data antes de consultar.");
+                    return;
+                }
+
+                const dataIso = this.dataParaIso(this.filtroData);
+                if (!dataIso) {
+                    Utils.exibirModal("Data inválida. Use o padrão DD/MM/AAAA.");
                     return;
                 }
 
@@ -191,7 +232,7 @@
 
                 try {
                     const payload = {
-                        Data: this.filtroData
+                        Data: dataIso
                     };
 
                     this.dadosTabela = await Rotas.home.post(payload);
