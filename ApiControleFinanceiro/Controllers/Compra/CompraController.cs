@@ -26,11 +26,19 @@ namespace ApiControleFinanceiro.Controllers.Compra
 
         private static void Gravar(CompraParameters p, DateTime dataCompra)
         {
-            // TEMPORÁRIO: por enquanto gravam OUTRO e PIX (débito em conta e cartão vêm depois)
-            if (p.TipoDeCompra != TipoDeCompra.OUTRO && p.TipoDeCompra != TipoDeCompra.PIX)
+            // TEMPORÁRIO: por enquanto gravam OUTRO, PIX e DEBITO_EM_CONTA (cartão vem depois)
+            if (p.TipoDeCompra == TipoDeCompra.CARTAO_CREDITO)
             {
                 throw new RegraNegocioException("A gravação deste tipo de compra ainda não foi implementada.");
             }
+
+            // PIX e débito em conta criam um movimento na conta bancária para cada parcela
+            bool gravaMovimento = p.TipoDeCompra == TipoDeCompra.PIX || p.TipoDeCompra == TipoDeCompra.DEBITO_EM_CONTA;
+
+            // PIX lançado com a data de hoje: movimento com a data de hoje e conciliado
+            bool pagoHoje = p.TipoDeCompra == TipoDeCompra.PIX && p.PixHoje;
+
+            string tipoOperacao = p.TipoDeCompra == TipoDeCompra.PIX ? "PIX_SAIDA" : "DEBITO_EM_CONTA";
 
             string conexao = GLO.Conexao.SqlServer;
 
@@ -43,8 +51,8 @@ namespace ApiControleFinanceiro.Controllers.Compra
                 throw new RegraNegocioException("Plano de conta não encontrado.");
             }
 
-            // No PIX, a conta bancária precisa existir
-            if (p.TipoDeCompra == TipoDeCompra.PIX)
+            // Quando há movimento, a conta bancária precisa existir
+            if (gravaMovimento)
             {
                 int qtdConta = TSQL.ExecuteScalar<int>(conexao,
                     "select count(*) from conta_bancaria where id_conta_bancaria = @id",
@@ -76,20 +84,21 @@ namespace ApiControleFinanceiro.Controllers.Compra
                     decimal valor = valores[numero - 1];
                     DateTime vencimento = CompraCalculo.VencimentoPadrao(dataCompra, numero);
 
-                    // Movimento na conta bancária (só no PIX), um por parcela
+                    // Movimento na conta bancária (PIX e débito em conta), um por parcela
                     int? idMovto = null;
-                    if (p.TipoDeCompra == TipoDeCompra.PIX)
+                    if (gravaMovimento)
                     {
-                        // PIX hoje: data de hoje e conciliado. Senão: data do vencimento e não conciliado.
-                        DateTime dataMovto = p.PixHoje ? DateTime.Today : vencimento;
+                        // Pago hoje: data de hoje e conciliado. Senão: data do vencimento e não conciliado.
+                        DateTime dataMovto = pagoHoje ? DateTime.Today : vencimento;
 
                         idMovto = tsql.ExecuteScalar<int>(Comando(@"
                             insert into conta_bancaria_movto (id_conta_bancaria, data, tipo_movimento, tipo_opercao, conciliado, valor)
-                            values (@id_conta_bancaria, @data, 'D', 'PIX_SAIDA', @conciliado, @valor);
+                            values (@id_conta_bancaria, @data, 'D', @tipo_opercao, @conciliado, @valor);
                             select cast(scope_identity() as int);",
                             TSQL.Par("@id_conta_bancaria", p.IdContaBancaria),
                             TSQL.Par("@data", dataMovto),
-                            TSQL.Par("@conciliado", p.PixHoje),
+                            TSQL.Par("@tipo_opercao", tipoOperacao),
+                            TSQL.Par("@conciliado", pagoHoje),
                             TSQL.Par("@valor", valor)));
                     }
 
